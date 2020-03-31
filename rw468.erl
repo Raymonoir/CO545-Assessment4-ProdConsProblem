@@ -53,35 +53,55 @@ buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer) ->
         {isFullQ,WP} when length(BufferData) < MaxSize ->
             WP!notFull,
             receive 
-                {data,Msg} -> 
+                {data,Msg} when length(BufferData) == 0 -> 
+                    io:fwrite("Buffer is now: ~s ~n",[Msg]),
+                    io:fwrite("Waiting cons: ~w ~n ",[WaitingConsumer]),
+
+                if WaitingConsumer /= none -> WaitingConsumer!notEmpty;
+                true -> pass end,
+                buffer([Msg] , MaxSize, WaitingConsumer, WP);
+
+                {data,Msg} ->    
                     io:fwrite("WE GOT: ~s ~n",[Msg]),
-                    io:fwrite("Buffer is now: ~s ~n",[[BufferData|Msg]]),
-                    WaitingConsumer!notEmpty,
-                    buffer([BufferData|Msg] , MaxSize, WaitingConsumer, WP)      
+                    io:fwrite("Buffer is now: ~s ~n",[BufferData|Msg]),
+                    if WaitingConsumer /= none -> WaitingConsumer!notEmpty;
+                    true -> pass 
+                    end,
+
+                    buffer([Msg] , MaxSize, WaitingConsumer, WP)
             end;
+
         {isFullQ,WP} ->
             WP!full,
             buffer(BufferData, MaxSize, WaitingConsumer, WP);
-    
-
 
         %%%%%%%%CONSUMER%%%%%%%%
         {isEmptyQ,WC} when length(BufferData) > 0 -> 
             WC!notEmpty,
             io:fwrite("BufferData > 0 ~n"),
-            receive 
-                {getData,WC} -> [Head|Tail] = BufferData, 
-                io:fwrite("Head: ~w, Tail: ~w ~n",[Head,Tail]),
-                WC!{data,Head}, 
-                WaitingProducer!notFull,
-                buffer(Tail,MaxSize, WC, WaitingProducer)
-                
-            end;
+            buffer(BufferData, MaxSize, WC, WaitingProducer);
+
+
         {isEmptyQ,WC} ->
             io:fwrite("BufferData = 0 ~n"),
             WC!empty,
-            buffer(BufferData, MaxSize, WC, WaitingProducer) 
-            
+            buffer(BufferData, MaxSize, WC, WaitingProducer);
+
+           
+        {getData,WC} ->  
+                io:fwrite("Buffer: ~w ~n",[BufferData]),
+                if length(BufferData) == 0 -> 
+                    WC!{data,[]}, 
+                    WaitingProducer!notFull,
+                    buffer([],MaxSize, WC, WaitingProducer); 
+                true ->
+                    [Head|Tail] = BufferData,
+                    WC!{data,Head}, 
+                    WaitingProducer!notFull,
+                    buffer(Tail,MaxSize, WC, WaitingProducer)
+            end
+
+
     end.
 
 

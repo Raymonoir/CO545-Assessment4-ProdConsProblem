@@ -2,8 +2,8 @@
 -export([tests/1]).
 
 tests(Mod) ->
-  testSimple(Mod).
-  %testFullandEmpty(Mod).
+  testSimple(Mod),
+  testFullandEmpty(Mod).
 
 testSimple(Mod) ->
     Buffer = spawn(Mod, buffer, [5]),
@@ -14,19 +14,20 @@ testSimple(Mod) ->
     spawn(fun () ->
        Buffer!{isEmptyQ, self()},
        receive
-          empty -> empty,io:fwrite("passed D0 ~n");
+          empty -> empty;
           X0      -> io:fwrite("[D0] Consumer test fail. Buffer should be empty. Got ~w~n", [X0])
           after 1000 -> io:fwrite("[D0] Consumer test fail. Buffer should be empty but timed out.~n")
        end,
        receive
-          notEmpty -> notEmpty,io:fwrite("passed D1 ~n");
+          notEmpty -> notEmpty;
           X1      -> io:fwrite("[D1] Consumer test fail. Buffer should be notEmpty. Got ~w~n", [X1])
           after 1000 -> io:fwrite("[D1] Consumer test fail. Buffer should be notEmpty but timed out.~n")
        end,
+       
 
        Buffer!{getData, self()},
        receive
-          {data, "Helo"} -> Parent!done1,io:fwrite("passed D2 ~n");
+          {data, "Helo"} -> Parent!done1;
           X2      -> io:fwrite("[D2] Consumer test fail. Should have received Helo data, but got ~w~n", [X2])
           after 1000 -> io:fwrite("[D2] Consumer test fail. Should have received Helo data, but timed out.~n")
        end end),
@@ -36,7 +37,7 @@ testSimple(Mod) ->
     spawn(fun () ->
       Buffer!{isFullQ, self()},
       receive
-        notFull -> notFull,io:fwrite("passed D3 ~n");
+        notFull -> notFull;
         Y0      -> io:fwrite("[D3] Producer test fail. Buffer should be notFull. Got ~w~n", [Y0])
         after 1000 -> io:fwrite("[D3] Producer test fail. Buffer should be notFull but timed out.~n")
       end,
@@ -62,6 +63,8 @@ testSimple(Mod) ->
     P = spawn(fun () ->
       % Wait for the consumer to tell us who they are
       receive {consumer, C} -> C end,
+
+
       % Buffer should be initially empty
       Buffer!{isFullQ, self()},
       receive
