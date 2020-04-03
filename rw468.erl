@@ -14,7 +14,7 @@ logger (Count) ->
 % Task2
 consumer (Buffer,Logger,Count) ->
     %c0 -> c1
-    Buffer!{isEmptyQ,self()}, Logger!"Consumer awoke, asking for data.",
+    Buffer!{isEmptyQ,self()},
 
     receive 
         %c1 -> c2
@@ -67,17 +67,18 @@ buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer) ->
             WC!empty,
             buffer(BufferData, MaxSize, WC, WaitingProducer);
 
-           
+        
+        %%%%%%%%DATA%%%%%%%%
         {getData,WC} ->  
-                if length(BufferData) == 0 -> 
-                    WC!{data,[]}, 
-                    WaitingProducer!notFull,
-                    buffer([],MaxSize, WC, WaitingProducer); 
-                true ->
-                    [Head|Tail] = BufferData,
-                    WC!{data,Head}, 
-                    WaitingProducer!notFull,
-                    buffer(Tail,MaxSize, WC, WaitingProducer)
+            io:fwrite("BufferData: ~p ~n", [BufferData]),
+            if length(BufferData) == 0 -> 
+                WC!empty,
+                buffer(BufferData,MaxSize, WC, WaitingProducer); 
+            true ->
+                [Head|Tail] = BufferData,
+                WC!{data,Head}, 
+                WaitingProducer!notFull,
+                buffer(Tail,MaxSize, WC, WaitingProducer)
             end;
 
 
@@ -90,7 +91,7 @@ buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer) ->
             true ->
                 if WaitingConsumer /= none -> WaitingConsumer!notEmpty;
                 true -> pass end,
-                buffer([BufferData|Msg] , MaxSize, WaitingConsumer, WaitingProducer)
+                buffer(BufferData ++ Msg , MaxSize, WaitingConsumer, WaitingProducer)
             end
                 
             
