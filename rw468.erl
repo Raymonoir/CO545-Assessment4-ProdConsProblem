@@ -12,6 +12,7 @@ logger (Count) ->
 
 
 % Task2
+% Consumer recieves messages from the buffer and keeps count of these messages
 consumer (Buffer,Logger,Count) ->
     %c0 -> c1
     Buffer!{isEmptyQ,self()},
@@ -29,7 +30,7 @@ consumer (Buffer,Logger,Count) ->
             subConsumer(Buffer,Logger, Count)
     end.
 
-
+%Sub consumer is only called by consumer when it receives noEmpty
 subConsumer(Buffer, Logger,Count) ->
     %c3 -> c4
     Buffer!{getData,self()},
@@ -42,7 +43,8 @@ subConsumer(Buffer, Logger,Count) ->
     end.
 
 
-
+%Task 3
+%Acts as a data store to be accesses by both consumer and producer concurrently
 buffer(MaxSize) ->buffer([], MaxSize, none, none).
 buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer) ->
 
@@ -97,7 +99,8 @@ buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer) ->
             
     end.
 
-
+%Task 4
+%Main function to spawn Buffer, Logger and passes correct parameters to cosumer and producer
 main () ->
     B = spawn(?MODULE,buffer,[5]),
     L = spawn(?MODULE, logger,[0]),
