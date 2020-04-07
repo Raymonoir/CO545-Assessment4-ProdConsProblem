@@ -52,15 +52,16 @@ buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer) ->
             WP!notFull,
             buffer(BufferData, MaxSize, WaitingConsumer, WP);
 
+
         {isFullQ,WP} ->
             WP!full,
-            buffer(BufferData, MaxSize, WaitingConsumer, WP);
+            buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer);
 
 
         %%%%%%%%CONSUMER%%%%%%%%
         {isEmptyQ,WC} when length(BufferData) > 0 -> 
             WC!notEmpty,
-            buffer(BufferData, MaxSize, WC, WaitingProducer);
+            buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer);
 
 
         {isEmptyQ,WC} ->
@@ -70,15 +71,14 @@ buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer) ->
         
         %%%%%%%%DATA%%%%%%%%
         {getData,WC} ->  
-            io:fwrite("BufferData: ~p ~n", [BufferData]),
             if length(BufferData) == 0 -> 
                 WC!empty,
-                buffer(BufferData,MaxSize, WC, WaitingProducer); 
+                buffer(BufferData,MaxSize, WaitingConsumer, WaitingProducer); 
             true ->
                 [Head|Tail] = BufferData,
                 WC!{data,Head}, 
                 WaitingProducer!notFull,
-                buffer(Tail,MaxSize, WC, WaitingProducer)
+                buffer(Tail,MaxSize, WaitingConsumer, WaitingProducer)
             end;
 
 
