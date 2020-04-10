@@ -57,13 +57,13 @@ buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer) ->
 
         {isFullQ,WP} ->
             WP!full,
-            buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer);
+            buffer(BufferData, MaxSize, none, none);
 
 
         %%%%%%%%CONSUMER%%%%%%%%
         {isEmptyQ,WC} when length(BufferData) > 0 -> 
             WC!notEmpty,
-            buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer);
+            buffer(BufferData, MaxSize, none, WaitingProducer);
 
 
         {isEmptyQ,WC} ->
@@ -75,12 +75,12 @@ buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer) ->
         {getData,WC} ->  
             if length(BufferData) == 0 -> 
                 WC!empty,
-                buffer(BufferData,MaxSize, WaitingConsumer, WaitingProducer); 
+                buffer(BufferData,MaxSize, none, WaitingProducer); 
             true ->
                 [Head|Tail] = BufferData,
                 WC!{data,Head}, 
                 WaitingProducer!notFull,
-                buffer(Tail,MaxSize, WaitingConsumer, WaitingProducer)
+                buffer(Tail,MaxSize, none, WaitingProducer)
             end;
 
 
@@ -95,8 +95,6 @@ buffer(BufferData, MaxSize, WaitingConsumer, WaitingProducer) ->
                 true -> pass end,
                 buffer(BufferData ++ Msg , MaxSize, WaitingConsumer, WaitingProducer)
             end
-                
-            
     end.
 
 %Task 4
